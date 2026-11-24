@@ -1,0 +1,7 @@
+fund_id,calculation_id,consumed_source_version,output_value,output_unit
+F001,F001:daily_return,1,1,percent
+F001,F001:risk_score,1,3,score
+F002,F002:daily_return,1,0,percent
+F003,F003:daily_return,1,0.5,percent
+F003,F003:risk_score,1,4,score
+F006,F006:daily_return,1,0.5,percent

@@ -1,0 +1,17 @@
+{
+  "harvest.svg": {
+    "source": "https://www.harvest.fr/",
+    "provenance": "Official Harvest website asset, retained without modification; originally collected 2026-10-16."
+  },
+  "databricks.svg": {
+    "source": "https://www.databricks.com/",
+    "retrieved": "2026-11-16",
+    "provenance": "First header logo image, decoded without modification from official homepage"
+  },
+  "manrope.ttf": {
+    "source": "https://github.com/google/fonts/tree/main/ofl/manrope",
+    "license": "SIL Open Font License 1.1; see manrope-OFL.txt",
+    "retrieved": "2026-11-16",
+    "provenance": "Manrope variable font, bundled locally for offline use"
+  }
+}

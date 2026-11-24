@@ -1,0 +1,41 @@
+<section class="eres-start" aria-labelledby="eres-title">
+<p class="eyebrow">Cas 1 · Agrégation ERES</p>
+<h1 id="eres-title">Quelles positions peut-on publier&nbsp;?</h1>
+<p>Suivez un lot depuis les huit CSV fournisseur jusqu’aux situations retenues. Expliquez dans votre carnet pourquoi une ligne est publiée, rejetée ou conservée dans l’historique.</p>
+<div class="actions"><a class="button primary" href="eres/20261123_HARVEST.zip" download>Télécharger le petit lot</a> <a class="button" href="eres/import_eres.py" download>Télécharger le notebook</a></div>
+<p>Jeu pédagogique au format ERES. Les identifiants, personnes, montants et dates ont été adaptés. « Publiée » désigne une situation présente dans la vue Gold de l’atelier.</p>
+</section>
+<section class="card" id="essai"><h2>1 · Ouvrir votre essai</h2>
+<p>Ouvrez votre essai Harvest ou Avanade / Accenture avec votre compte. Importez votre copie du notebook et utilisez le code personnel affiché dans Mon parcours. Vous obtenez ainsi votre propre schéma, même si plusieurs personnes utilisent le même catalogue.</p>
+<p><a class="button" href="trial.html">Préparer mon essai pas à pas →</a></p>
+<ol><li>Dans votre essai Databricks, ouvrez <strong>Catalog</strong>. Choisissez un catalogue d’atelier où vous pouvez créer un schéma, puis un schéma contenant un volume géré où vous pouvez lire et écrire. Si nécessaire, le propriétaire de l’essai crée ce volume via <strong>Create → Volume</strong>.</li>
+<li>Dans le volume, choisissez <strong>Upload files</strong> et déposez le petit ZIP daté tel quel. Copiez son chemin <code>/Volumes/catalogue/schema/volume/20261123_HARVEST.zip</code>.</li>
+<li>Dans <strong>Workspace → Import</strong>, importez <code>import_eres.py</code> comme notebook. Ouvrez-le sur un compute Python compatible avec les volumes. Exécutez la première cellule pour créer les widgets puis renseignez <code>archive</code> et <code>equipe</code> (<span data-person-code>votre code personnel affiché dans Mon parcours</span>). Exécutez la cellule suivante. Relevez l’identité et le schéma affichés.</li></ol>
+<p>Si le catalogue, le volume ou le compute manque, le propriétaire de <em>cet essai</em> prépare la ressource. Les liens de Genie et Builder doivent provenir du même workspace. En attendant, ouvrez le petit ZIP localement et vérifiez la ventilation de la position à la ligne 5 de POS.</p></section>
+<section class="card" id="positions"><h2>2 · Suivre les positions du lot</h2>
+<p>Exécutez Bronze et ouvrez <code>bronze_pos</code>. Choisissez une ligne et gardez le nom du fichier et son numéro. Remontez du sous-contrat au compte et au client, puis du support au référentiel TYP. Conservez la valeur brute du fournisseur.</p>
+<p>Dans Silver, le lot porte la date du nom de l’archive. Un compte actif accepte une date de valorisation comprise entre le jour du lot moins trois ans et le jour du lot, bornes incluses. La ventilation doit vérifier <code>disponible + indisponible = brut</code>. Pour cet exercice, l’écart bloque la position. Silver conserve le premier motif bloquant.</p>
+<p>Exécutez les vues Gold. Parmi les lignes valides de chaque compte, gardez toutes les positions à la dernière date valide. Une ligne valide plus ancienne devient historique. Un compte peut avoir plusieurs supports le même jour.</p>
+<details><summary>Vérification indépendante dans SQL</summary><p>Dans SQL Editor, sélectionnez le catalogue et le schéma affichés par le notebook. Comparez les résultats suivants à <code>bilan_lot</code>.</p>
+<pre>SELECT (SELECT count(*) FROM bronze_pos) AS lues,
+       (SELECT count(*) FROM gold_situation) AS publiees,
+       (SELECT count(*) FROM revue_positions WHERE decision = 'HISTORIQUE') AS historiques,
+       (SELECT count(*) FROM silver_positions WHERE regle &lt;&gt; 'VALIDE') AS rejetees;
+SELECT fichier, ligne_csv, valeur_euro, disponible, indisponible
+FROM silver_positions WHERE disponible + indisponible &lt;&gt; valeur_euro;
+SELECT code_contrat, date_valorisation, decision
+FROM revue_positions WHERE code_sous_contrat = 'SC-000001'
+ORDER BY date_valorisation;</pre></details>
+<details><summary>Comparer les attendus après votre enquête</summary><p>Petit lot du 23 novembre 2026 : 6 positions lues, 3 publiées, 1 historique, 2 rejetées. Un rejet concerne la ventilation, l’autre une date antérieure au 23 novembre 2023 sur compte actif. Le lot contient aussi 4 lignes de mouvement pour 3 groupes. Un groupe réunit 2 lignes et un seul détail instrumenté.</p></details></section>
+<section class="card" id="enquete"><h2>3 · Enquêter dans Genie et construire la revue</h2>
+<p>Dans votre essai, créez un espace Genie avec le warehouse autorisé et les vues <code>revue_positions</code> et <code>bilan_lot</code> du schéma affiché. Ouvrez une conversation et conservez le SQL exécuté.</p>
+<blockquote>Pour ce lot ERES, combien de positions ont été lues, publiées, rejetées ou conservées dans l’historique ? Explique une ligne de chaque catégorie avec sa date de lot, sa règle, son fichier et son numéro de ligne. Vérifie que les catégories couvrent toutes les positions.</blockquote>
+<details id="revue"><summary>Prompt Builder · première version</summary><p>Dans Apps → Build de votre essai, sélectionnez votre App Space et joignez votre conversation, le nom complet des deux vues et le SQL vérifié. Ajoutez votre code personnel au nom de votre app.</p>
+<blockquote>Construis une application en français pour la revue d’un lot ERES en lecture seule. Utilise uniquement les deux vues qualifiées de notre conversation. Dans bilan_lot, affiche lues, publiees, rejetees et historiques par date_lot. Dans revue_positions, une ligne représente une position source. Filtre par decision et regle. Sur une ligne, affiche fichier, ligne_csv, date_valorisation, valeur_euro, disponible et indisponible. Affiche l’identité effective de lecture, gère l’absence de ligne et le refus de lecture. Ne modifie aucune donnée et n’invente aucun résultat si la requête échoue.</blockquote></details>
+<details><summary>Prompt Builder · vérifier puis itérer</summary><blockquote>Voici mon écart observé et le SQL de contrôle : [coller vos preuves]. Adapte l’app pour expliquer cet écart. Distingue une position valide historique d’une position rejetée, montre la dernière date valide du compte et rapproche les trois catégories du total lu. Teste un filtre vide et une ligne de ventilation en échec. Fournis la version et les vérifications réellement exécutées.</blockquote></details>
+<p>Comparez l’app publiée au SQL et à Genie sur le même lot. Si Genie ou Builder est indisponible dans votre essai, faites la revue dans SQL et consignez la surface à reprendre. Enregistrez votre résultat dans le <a href="eres/carnet.csv" download>carnet de lot</a>.</p></section>
+<section class="card"><h2>4 · Rejouer et passer au cas Market Data</h2>
+<p>Relancez le petit lot dans le même essai et avec votre code personnel. Les compteurs doivent être identiques. En extension, chargez le <a href="eres/20261124_HARVEST.zip" download>lot volume du 24 novembre</a>, changez le chemin dans le widget et relancez le notebook. Chaque lot possède son schéma. Comparez le bilan du volume aux attendus ci-dessous.</p>
+<details><summary>Attendus du rejeu volume</summary><p>160 007 positions lues, 144 007 publiées, 16 000 rejetées pour ventilation, 0 historique. Le lot contient 404 969 lignes dans ses huit fichiers source.</p></details>
+<p>Pour le second cas, revenez au schéma du petit lot. Exécutez les sections « Préparer le parcours suivant » et « Reçu de mon schéma » pour créer les vues de fonds puis afficher votre reçu JSON. Créez un espace Genie pour <code>fund_freshness</code> et <code>calculation_review</code>. Dans « Mes accès », collez ce reçu, ajoutez les liens Genie et Builder de votre essai, puis appliquez les paramètres.</p>
+<div class="actions"><a class="button primary" href="missions.html#funds/0">Cas 2 · Fraîcheur des fonds →</a> <a class="button" href="missions.html#contracts/0">Prolongement · Conversion des contrats</a></div></section>

@@ -1,0 +1,766 @@
+{
+  "id": "harvest-hands-on",
+  "version": "2026-11-23-v8",
+  "title": "De la donnée au sens partagé, puis à la décision",
+  "subtitle": "Harvest × Databricks · Atelier pratique Genie → Genie App Builder",
+  "language": "fr",
+  "duration": 180,
+  "audience": "Huit participants travaillent individuellement avec leur compte, dans l’essai Harvest ou Avanade / Accenture.",
+  "disclosure": "Le premier cas utilise des lots ERES adaptés pour novembre 2026. Le parcours fonds et le prolongement contrats utilisent un autre jeu synthétique, figé au 20 octobre 2026 à 10:00 UTC. Les apps lisent les données de leur propre essai.",
+  "outcome": "Importer votre lot ERES, expliquer les situations publiables et examiner les absences de valeurs de fonds. Conserver vos résultats SQL et les versions de vos apps.",
+  "agenda": [
+    {
+      "id": "prepare",
+      "title": "Accueil et connexion aux essais",
+      "minutes": 10,
+      "detail": "14 h 00–14 h 10 · Choisir votre prénom, ouvrir votre essai et préparer le notebook avec votre code personnel."
+    },
+    {
+      "id": "eres",
+      "title": "Cas 1 · Import ERES et revue des situations",
+      "minutes": 75,
+      "detail": "14 h 10–15 h 25 · 30 min pour charger et contrôler le lot, 15 min pour vérifier les décisions avec SQL et Genie, 25 min pour construire et itérer la revue, 5 min pour conserver les preuves."
+    },
+    {
+      "id": "break",
+      "title": "Pause",
+      "minutes": 5,
+      "detail": "15 h 25–15 h 30 · Enregistrer le carnet."
+    },
+    {
+      "id": "funds",
+      "title": "Cas 2 · Fraîcheur des fonds",
+      "minutes": 65,
+      "detail": "15 h 30–16 h 35 · 20 min d’enquête et mini-lab, 25 min de construction et itération, 15 min de vérification, 5 min de marge."
+    },
+    {
+      "id": "access",
+      "title": "Versions publiées et preuves",
+      "minutes": 10,
+      "detail": "16 h 35–16 h 45 · Vérifier les versions publiées dans chaque essai et exporter les preuves."
+    },
+    {
+      "id": "decide",
+      "title": "Décisions et suite",
+      "minutes": 15,
+      "detail": "16 h 45–17 h 00 · Une minute par personne pour présenter une preuve et une limite, puis choisir le prochain test. Le rejeu volume est facultatif."
+    }
+  ],
+  "preflight": [
+    "Se connecter avec son propre compte à l’essai de son organisation. Identifier le volume, le compute du notebook, le warehouse SQL et l’App Space utilisables avec ce compte.",
+    "Vérifier l’accès aux sources du parcours et la possibilité de créer une application dans l’App Space. Identifier le compte qui exécute réellement les lectures.",
+    "Dans le workspace, ouvrir Apps → Build, sélectionner l’App Space indiqué par l’animateur et nommer votre app. L’aperçu demande une connexion séparée ; autoriser le popup ou utiliser Open in new tab. Vérifier ensuite l’URL publiée séparément.",
+    "Contrôler la date du lot ERES dans le nom du ZIP. Le deuxième cas emploie le snapshot fonds du 20 octobre.",
+    "Dans Mon parcours, sélectionner son prénom. Utiliser son code personnel dans le notebook, puis saisir les liens de son essai et son schéma dans Mes accès.",
+    "Exporter régulièrement le carnet. Les notes restent dans ce navigateur, sans synchronisation d’équipe. Les services Databricks nécessitent Internet ; le guide et les données téléchargées restent lisibles hors ligne."
+  ],
+  "surfaces": "Genie Agent : agent préparé pour les tables du parcours (anciennement Space), utilisé ici pour l’enquête. Genie One : exploration générale, possible en extension. Genie Code : aide au code, hors prérequis. Genie App Builder : construction de l’application dans un App Space. Le portail est votre guide et carnet local ; il n’interroge pas Databricks. Le mini-lab « Ontologie & sémantique » montre des calculs locaux reproductibles ; ce n’est pas un service de graphe ou une réponse live. Les metric views Unity Catalog constituent une extension de déploiement distincte.",
+  "shared_contract": "Version harvest-lab-2026-11-16-v1 ; snapshot pédagogique immuable au 2026-10-20 10:00:00 UTC. Aucun rafraîchissement automatique. Tous les montants contractuels sont des entiers en centimes EUR ; afficher /100 en euros sans mélanger les estimations. Dates ISO et heures UTC ; aucune date courante implicite. Clés uniques vérifiées localement ; pas de données personnelles. Une valeur NULL signifie preuve absente et ne vaut jamais zéro. Les vues fournies définissent les indicateurs de référence ; réutiliser leur logique. Le modèle pédagogique harvest-semantics-v1 décrit les objets, clés et relations. Les statuts des vues SQL et les métriques SA1/SA2/SB1/SB2 sont les définitions communes de l’exercice. Une ontologie ou couche sémantique client exige son propre mapping, propriétaire et attendus. Accès pédagogique au niveau des objets, sans promesse de RLS ni de masque. Le mode d’identité réel doit être constaté avant la génération et lors de la publication.",
+  "tracks": [
+    {
+      "id": "contracts",
+      "label": "A · Agrégation de contrats",
+      "title": "Préserver la valeur fournisseur",
+      "question": "Quels contrats faut-il examiner avant de préparer une livraison, et quelle preuve demander au fournisseur ou au responsable du mapping ?",
+      "decision": "Produire une liste de contrats à examiner et choisir une prochaine action pour chaque motif, sans altérer les montants ni lancer une livraison.",
+      "roles": "Comparez vous-même les montants et examinez les écarts de conversion. Relevez la décision de livraison à faire valider par Harvest.",
+      "contract": "Sources : {{ns}}contract_observations et {{ns}}contract_review. Une ligne par contract_id au business_date 2026-10-20 ; six contrats, trois fournisseurs fictifs, trois familles de format. Ce snapshot résume des observations de conversion préparées ; aucun parseur de production n’est exécuté. contract_id est la clé, sans jointure nécessaire. supplier_cents = valeur fournisseur ; normalized_cents = résultat observé du mapping ; analytical_cents = estimation séparée. normalization_delta_cents = normalisé moins fournisseur. review_status : SOURCE_INCOMPLETE si fournisseur absent ; CONVERSION_FAILED si erreur ou normalisé absent ; VALUE_CHANGED si les valeurs diffèrent ; PRESERVED sinon. PRESERVED confirme seulement la conservation numérique : ce n’est pas une autorisation de livraison. Somme par statut avec nombre de montants connus ; un total incomplet reste signalé. Pas de conformité Pénélop revendiquée : custom-xml est un nom pédagogique.",
+      "questions": [
+        "Pour le 20 octobre 2026, examine tous les contrats, sans exclure aucun statut : valeur fournisseur conservée, modifiée, source incomplète ou conversion échouée. Donne chaque contract_id, review_status, le motif, la version du mapping et la source. Montre le SQL exécuté et le nombre total de contrats couverts.",
+        "Quelle somme fournisseur en euros correspond aux contrats conservés, et combien de montants sont connus dans chaque catégorie ? Une estimation analytique différente doit-elle modifier ce classement ?",
+        "Peux-tu affirmer qu’un écart vient du fournisseur ou du mapping avec ces seules observations ? Quelles preuves manquent ? Examine C002, C004 et C005 sans inventer de correction."
+      ],
+      "handoff": "Enregistrer le lien de conversation, le SQL exécuté, les identifiants et les sommes obtenus, les colonnes vérifiées, l’identité de lecture et l’incertitude sur la cause. Validez la distinction fournisseur/normalisé/estimation avant d’ouvrir Builder. Joindre le modèle métier, le contrat de métriques, SA1/SA2 et les preuves Genie. Builder doit réutiliser review_status et la définition fournisseur, afficher la définition des indicateurs et une trace contrat → source → mapping. Les constantes des résultats du mini-lab ne doivent pas entrer dans le prompt.",
+      "prompt1": "Je vérifie la conversion des contrats chez Harvest. Dans l’App Space {{app_space_url}}, construis une application en français nommée « Revue des conversions », en lecture seule. Sources confirmées : {{ns}}contract_observations (contract_id, business_date, provider_id, format_family, source_file, mapping_version, supplier_cents, normalized_cents, analytical_cents, conversion_error) et {{ns}}contract_review (mêmes colonnes, review_status, normalization_delta_cents). Inspecte d’abord les schémas et les droits ; arrête et explique toute source inaccessible ou colonne manquante. Aucun jeu de remplacement ni réponse AI prédéfinie. Jeu harvest-lab-2026-11-16-v1, arrêté au 20/10/2026 ; une ligne par contrat, EUR en centimes, valeurs manquantes NULL. Réutilise review_status tel que défini dans la vue. Les faits fournisseur restent autoritatifs ; l’estimation analytique est une colonne séparée. Une valeur PRESERVED n’autorise pas la livraison. Affiche : répartition par motif avec dénominateur, somme des montants fournisseur connus par motif et couverture, filtre fournisseur, liste des contrats, détail des valeurs et lien logique au fichier/source/version. Réponds à trois questions : quels contrats examiner, quel montant connu est concerné, quelle preuve demander ensuite ? Inclure chargement, population vide, erreur de requête et refus d’accès ; ne pas remplacer un échec par des données synthétiques locales. Identité de lecture constatée : {{identity_mode}}. Si elle n’est pas vérifiée, demander cette information avant de générer les accès. Afficher l’identité effective issue de la plateforme ; aucun sélecteur de rôle ne donne de droits. Paramétrer les filtres, protéger l’accès serveur, ne modifier aucune source. Aucun bouton publier/corriger/approuver. Les hypothèses éventuelles sont « Simulation — non enregistrée ». Utiliser les logos officiels fournis et une mise en page lisible au clavier. Vérifier la même population avec A1, A2 et A3, sans coder leurs résultats en dur. Livrer un aperçu fonctionnel, les hypothèses, les requêtes et la procédure de vérification. Intégrer uniquement les résultats et le contrat effectivement validés dans notre conversation Genie jointe. Modèle métier pédagogique harvest-semantics-v1 : joindre le modèle du parcours et les SQL SA1/SA2 validés. Ajouter un panneau « Pourquoi ce chiffre ? » avec définition, unité, grain, dénominateur, source et filtre. Réutiliser les statuts des vues SQL citées ; aucune classification métier recodée dans le navigateur. Inspecter la correspondance entre les objets du modèle et les colonnes réelles. Ne pas supposer que des metric views natives ou un moteur de graphe sont déployés. Définir la complétude fournisseur comme 100 × COUNT(supplier_cents) / COUNT(*), tous statuts inclus dans les filtres ; afficher les deux comptes. La distinguer du taux de conservation et de la part conservée des montants connus.",
+      "prompt2": "Conserve notre application Harvest Revue des conversions et son contrat de données. Lis d’abord les écarts effectivement enregistrés dans notre carnet (SQL A1/A2/A3, conversation Genie, capture ou version de l’app) ; demande les observations manquantes, sans inventer de constat. Sur harvest-lab-2026-11-16-v1, même identité, fournisseur et date, corrige chaque différence mesurée avec le SQL de référence. Ajoute des contrôles : fournisseur P99 sans résultat, C004 sans montant fournisseur, C002 avec normalisé différent, C005 avec estimation différente mais fournisseur conservé. Préserve NULL et affiche la couverture des sommes ; une somme fournisseur absente n’est pas 0 €. Montre la valeur fournisseur, normalisée et analytique séparément, avec écart signé, source et mapping. Si la cause n’est pas démontrée, afficher « cause à confirmer ». Ajoute un message explicite en cas de refus de lecture et vérifie la route avec l’identité prévue par l’animateur ; aucun repli vers une fixture. Intègre les retours de lisibilité du métier. Aucun changement de valeur, publication ni succès de sauvegarde métier. Fournis la nouvelle version, les modifications et un registre des tests observés, échecs compris. Une case cochée dans le carnet n’exécute pas un test de la plateforme. Comparer les indicateurs aux définitions SA1/SA2 du mini-lab, sans copier les constantes du résultat. Tester une ambiguïté de vocabulaire et une limite de grain ou de NULL. Montrer la définition partagée et la trace jusqu’à la source. Si les deux lectures sont déjà correctes, consigner cette convergence ; ne pas inventer une amélioration ni un gain de précision. Vérifier explicitement le numérateur et le dénominateur de la complétude fournisseur ; le mot « couverture » seul ne suffit pas.",
+      "sql_ids": [
+        "A1",
+        "A2",
+        "A3"
+      ],
+      "checks": [
+        {
+          "id": "A-normal",
+          "case": "Population et valeurs normales",
+          "expected": "A1/A2 : six contrats ; trois PRESERVED. Somme fournisseur de ces trois = 14 600,25 €. Écart C002 = −43 470,00 € ; ce n’est pas une perte financière prouvée."
+        },
+        {
+          "id": "A-missing",
+          "case": "Preuve manquante",
+          "expected": "C004 : SOURCE_INCOMPLETE et montant inconnu ; C003 : CONVERSION_FAILED. Aucune imputation à zéro, aucune cause inventée."
+        },
+        {
+          "id": "A-counter",
+          "case": "Contre-exemple",
+          "expected": "C005 : PRESERVED malgré une estimation de 8 250 € contre 8 000 € fournisseur. L’estimation ne remplace pas la valeur contractuelle."
+        },
+        {
+          "id": "A-empty",
+          "case": "Filtre sans ligne",
+          "expected": "P99 : compteur 0, somme NULL, message explicite et filtres conservés."
+        },
+        {
+          "id": "A-access",
+          "case": "Identités autorisée/refusée",
+          "expected": "Le compte participant autorisé lit les deux objets. Un compte de contrôle peut accéder au workspace/warehouse mais pas à ces objets. Répéter sur Genie et l’app publiée, avec l’identité effective enregistrée ; un SP partagé ne prouve pas une séparation par utilisateur."
+        },
+        {
+          "id": "A-semantics",
+          "case": "Ontologie et définition réutilisée",
+          "expected": "SA0 compte 4 normalisés ; SA1 compte 3 conservés et 14 600,25 € fournisseur. C005 reste conservé. Même définition dans SQL, Genie et app ; cause et autorisation de livraison non déduites."
+        }
+      ],
+      "extension": "Extension native : examiner semantic/metric-views.sql avec l’animateur, confirmer la disponibilité et les droits, puis déployer après revue. Comparer MEASURE() aux SQL sémantiques. Après l’atelier seulement : remplacer le snapshot par un vrai mapping anonymisé avec entrée, sortie attendue, version et preuve d’équivalence ; définir le traitement des consommateurs de fichiers entiers. Le rejeu et la livraison idempotente nécessitent un atelier distinct.",
+      "fallback": "Si Genie est indisponible, travailler sur A1/A2/A3 dans SQL et marquer Genie BLOCKED. Si Builder manque, rédiger le contrat et observer une app autorisée ; marquer la construction BLOCKED. L’observation ne valide pas une réalisation pratique. Hors ligne, lire les CSV et le guide ; les contrôles live restent NOT RUN."
+    },
+    {
+      "id": "funds",
+      "label": "B · Données de fonds",
+      "title": "Détecter l’absence et cibler le recalcul",
+      "question": "Quelles VL attendues manquent réellement, et quels résultats calculés doivent être revus après une nouvelle version fournisseur ?",
+      "decision": "Prioriser les relances fournisseur et les candidats au recalcul, tout en distinguant un retard résolu, une attente normale et une vraie absence.",
+      "roles": "Vérifiez le calendrier du fonds, puis suivez la version de la VL jusqu’au calcul qui l’a consommée.",
+      "contract": "Sources : {{ns}}fund_expectations (une ligne par fund_id/nav_date), {{ns}}fund_observations (zéro ou une ligne par même clé), {{ns}}calculation_state (une ligne par calculation_id) ; vues {{ns}}fund_freshness et {{ns}}calculation_review. Six fonds fictifs ; trois observations et six calculs. Jointure attentes LEFT JOIN observations sur fund_id ET nav_date pour conserver les absences. Snapshot à date unique : fund_id est unique dans fund_freshness, nécessaire à la jointure des calculs. Heure figée : 2026-10-20 10:00:00 UTC. expected=0 → NOT_EXPECTED ; observation absente à échéance passée → MISSING ; avant échéance → WAITING ; reçue après échéance → LATE_RECEIVED, sinon ON_TIME. Une VL inchangée ne suffit pas à prouver une erreur. nav_eur/previous_nav_eur sont des EUR/part ; daily_return_pct = 100 × (VL/VL précédente − 1), seulement avec preuve reçue et dénominateur positif. Aucune performance agrégée de portefeuille. Calcul : version fournisseur supérieure à la version consommée → RECOMPUTE_CANDIDATE ; version égale → CURRENT ; source absente → WAIT_SOURCE ; version inférieure → VERSION_CONFLICT. Dépendances directes préparées, sans graphe transitif ni exécution de recalcul. output_value reste le résultat antérieur avec son unité ; ne pas mélanger score et pourcentage.",
+      "questions": [
+        "Au 20 octobre 2026 à 10:00 UTC, quelles VL attendues sont réellement manquantes ? Compare le calendrier aux observations avec une jointure qui conserve les absences. Montre le SQL et explique les statuts.",
+        "Quels calculs ont consommé une version antérieure à la dernière version reçue, lesquels restent à jour et lesquels attendent une source ? Donne les calculation_id et les versions.",
+        "Une VL constante ou une absence avant midi signifie-t-elle un incident ? Explique F002, F004, F005 et F006 ; distingue retard historique et absence encore ouverte."
+      ],
+      "handoff": "Conserver la conversation, le SQL, l’heure de référence, les clés de jointure, la liste des absences, les versions de chaque calcul et les incertitudes. Valider le calendrier avec le métier. Ajouter ces éléments au prompt Builder, sans ajouter de réponse attendue cachée à Genie. Joindre le modèle fonds → échéance → observation → calcul, SB1/SB2 et le SQL Genie. Builder doit lire les statuts des vues communes, séparer les compteurs fonds/calculs et montrer la preuve de version. Réutiliser les définitions ; ne pas créer une nouvelle règle « NULL = incident ».",
+      "prompt1": "J’examine les données de fonds pour Harvest. Dans l’App Space {{app_space_url}}, construis en français « Fraîcheur et impact des VL », une app en lecture seule. Inspecte {{ns}}fund_expectations (fund_id, nav_date, expected, deadline_utc, calendar_note), {{ns}}fund_observations (fund_id, nav_date, nav_eur, previous_nav_eur, received_at_utc, source_version, source_file), {{ns}}calculation_state (fund_id, calculation_id, consumed_source_version, output_value, output_unit), et les vues {{ns}}fund_freshness / {{ns}}calculation_review. Si un objet manque ou est interdit, signale-le sans inventer de colonnes ni fournir de fixture. Jeu harvest-lab-2026-11-16-v1, date unique 20/10/2026, observation figée à 10:00 UTC. Attentes LEFT JOIN observations sur fund_id et nav_date ; ne pas perdre les lignes absentes. Réutilise arrival_status, daily_return_pct et calculation_status des vues. Une VL constante n’est pas automatiquement une erreur ; une absence avant échéance n’est pas un incident ; un retard reçu est résolu du point de vue arrivée. EUR/part pour les VL ; rendement quotidien en %, NULL si preuve ou dénominateur manque. Ne pas moyenner ces rendements pour prétendre calculer une performance portefeuille. Inclure trois vues : calendrier attendu/reçu, détail fonds avec source et versions, liste des calculs à revoir avec sortie antérieure et unité. Compter DISTINCT calculation_id après toute jointure ; conserver les dénominateurs. Répondre : qui relancer, quels calculs examiner, quelle preuve manque ? Aucun recalcul réel, interpolation de VL ou modification fournisseur. Tout contrôle hypothétique porte « Simulation — non enregistrée ». Identité de lecture constatée : {{identity_mode}} ; demander confirmation si non vérifiée. Afficher l’identité effective fournie par la plateforme, avec contrôles serveur réels et filtres paramétrés. Prévoir chargement, vide, échec SQL, accès refusé, et unités/as-of visibles. Utiliser les logos officiels fournis. Comparer les mêmes filtres à B1/B2/B3 sans coder les résultats en dur. Livrer aperçu, requêtes, hypothèses et procédure de preuve. Utiliser notre enquête Genie validée jointe comme contrat. Modèle métier pédagogique harvest-semantics-v1 : joindre le modèle du parcours et les SQL SB1/SB2 validés. Ajouter un panneau « Pourquoi ce chiffre ? » avec définition, unité, grain, dénominateur, source et filtre. Réutiliser les statuts des vues SQL citées ; aucune classification métier recodée dans le navigateur. Inspecter la correspondance entre les objets du modèle et les colonnes réelles. Ne pas supposer que des metric views natives ou un moteur de graphe sont déployés.",
+      "prompt2": "Conserve notre app Harvest Fraîcheur et impact des VL. Lis nos observations réellement consignées (B1/B2/B3, SQL Genie, captures, identité et version de l’app). S’il manque une preuve, demande-la ; n’invente pas d’écart. Corrige les différences observées sur harvest-lab-2026-11-16-v1 à 10:00 UTC. Vérifie que la jointure conserve F003 sans observation, que F004 sans VL attendue et F005 avant midi ne deviennent pas de faux incidents, que F002 constant reste ON_TIME et que F006 reçu tard reste LATE_RECEIVED. Présente les candidats au recalcul par calculation_id avec version consommée et source, sans annoncer qu’ils ont été recalculés. Affiche la sortie antérieure et son unité ; ne confonds pas score de risque et rendement. Ajoute F999 sans résultat, erreur SQL visible et refus d’accès testé avec le compte prévu par l’animateur, sans remplacement silencieux. Les rendements vérifiables viennent de B1 et restent séparés des sorties historiques ; aucune estimation fournisseur. Améliore les libellés avec le métier. Fournis la nouvelle version et le registre de comparaison SQL/Genie/app avec échecs et limites. Une app publiée doit être contrôlée séparément de l’aperçu. Comparer les indicateurs aux définitions SB1/SB2 du mini-lab, sans copier les constantes du résultat. Tester une ambiguïté de vocabulaire et une limite de grain ou de NULL. Montrer la définition partagée et la trace jusqu’à la source. Si les deux lectures sont déjà correctes, consigner cette convergence ; ne pas inventer une amélioration ni un gain de précision.",
+      "sql_ids": [
+        "B1",
+        "B2",
+        "B3"
+      ],
+      "checks": [
+        {
+          "id": "B-normal",
+          "case": "Versions et rendements",
+          "expected": "F001 : 2 % de rendement quotidien observé ; F006 : 1 %. Trois RECOMPUTE_CANDIDATE (deux F001, un F006), un CURRENT, deux WAIT_SOURCE ; six identifiants uniques."
+        },
+        {
+          "id": "B-missing",
+          "case": "Donnée jamais arrivée",
+          "expected": "F003 : MISSING et rendement NULL ; conservé par LEFT JOIN. Deux calculs WAIT_SOURCE."
+        },
+        {
+          "id": "B-counter",
+          "case": "Faux positifs et retard résolu",
+          "expected": "F002 constant : ON_TIME ; F004 : NOT_EXPECTED ; F005 : WAITING ; F006 : LATE_RECEIVED, distinct d’une absence ouverte."
+        },
+        {
+          "id": "B-empty",
+          "case": "Population vide",
+          "expected": "F999 : 0 fonds et rendement NULL, message explicite ; pas de graphique ni moyenne artificielle."
+        },
+        {
+          "id": "B-access",
+          "case": "Identités autorisée/refusée",
+          "expected": "Compte participant autorisé : lecture des cinq objets. Compte de contrôle : refus de lecture attendu avec accès au workspace/warehouse. Contrôler séparément SQL, Genie et app publiée, en enregistrant l’identité effective ; les lectures par SP partagé ne démontrent pas l’isolation entre utilisateurs."
+        },
+        {
+          "id": "B-semantics",
+          "case": "Ontologie et définition réutilisée",
+          "expected": "SB0 : 3 absences et 8 lignes jointes ; SB1 : 1 MISSING parmi 5 attendus ; SB2 : 3 calculs candidats sur 2 fonds. Expliquer F003/F005 et le grain, sans annoncer un recalcul."
+        }
+      ],
+      "extension": "Extension native : examiner semantic/metric-views.sql avec l’animateur, confirmer la disponibilité et les droits, puis déployer après revue. Comparer MEASURE() aux SQL sémantiques. Après l’atelier : arbre transitif de dépendances, correction fournisseur versionnée, exécution sélective et comparaison numérique avec une référence Harvest. Ni parité MATLAB, ni gain de performance, ni SLA n’est démontré par ce jeu.",
+      "fallback": "Si Genie manque, utiliser B1/B2/B3 dans SQL et noter Genie BLOCKED. Si Builder manque, produire le contrat et observer une app autorisée ; construction BLOCKED. Hors ligne, analyser les attentes et CSV ; ne pas convertir cette observation en réussite de contrôle live."
+    }
+  ],
+  "workbook_fields": [
+    {
+      "id": "team",
+      "label": "Mon nom et mon essai"
+    },
+    {
+      "id": "question",
+      "label": "Décision et périmètre retenus"
+    },
+    {
+      "id": "identity",
+      "label": "Identité effective SQL / Genie / app et mode de lecture"
+    },
+    {
+      "id": "genie",
+      "label": "Conversation Genie : URL, question et résultat"
+    },
+    {
+      "id": "sql",
+      "label": "SQL exécuté, filtres, date et résultats inspectés"
+    },
+    {
+      "id": "contract",
+      "label": "Contrat validé et incertitudes"
+    },
+    {
+      "id": "app",
+      "label": "App : URL, aperçu ou publication, version"
+    },
+    {
+      "id": "observations",
+      "label": "Écarts réellement observés et retour métier pour le second prompt"
+    },
+    {
+      "id": "evidence",
+      "label": "Comparaison SQL / Genie / app, accès autorisé/refusé, liens de preuve"
+    },
+    {
+      "id": "decision",
+      "label": "Décision proposée et principale limite"
+    },
+    {
+      "id": "owner",
+      "label": "Responsable et prochain jalon daté"
+    },
+    {
+      "id": "ontology",
+      "label": "Ontologie : objet, relation, clé et ambiguïté levée"
+    },
+    {
+      "id": "semantics",
+      "label": "Métrique partagée : définition, avant/après, preuve et propriétaire"
+    }
+  ],
+  "presentation": "Préparez une restitution d’une minute. Montrez une preuve issue de vos deux cas, expliquez une limite et proposez le prochain test. Exportez votre suivi et, si vous l’avez renseigné, votre carnet de mission.",
+  "documentation": [
+    {
+      "label": "Genie : documentation officielle",
+      "url": "https://docs.databricks.com/aws/en/genie/"
+    },
+    {
+      "label": "Genie App Builder : création, aperçu et droits",
+      "url": "https://docs.databricks.com/aws/en/dev-tools/databricks-apps/genie-app-builder"
+    },
+    {
+      "label": "Databricks Apps : documentation officielle",
+      "url": "https://docs.databricks.com/aws/en/dev-tools/databricks-apps/"
+    },
+    {
+      "label": "Unity Catalog : privilèges",
+      "url": "https://docs.databricks.com/aws/en/data-governance/unity-catalog/manage-privileges/"
+    },
+    {
+      "label": "Unity Catalog metric views — couche de métriques réutilisables",
+      "url": "https://docs.databricks.com/aws/en/metric-views/"
+    },
+    {
+      "label": "Interroger les métriques avec MEASURE",
+      "url": "https://docs.databricks.com/aws/en/sql/language-manual/functions/measure"
+    }
+  ],
+  "semantic_lab": {
+    "version": "harvest-semantics-v1",
+    "title": "Même donnée. Un sens partagé.",
+    "disclosure": "Laboratoire local sur le snapshot synthétique au 20/10/2026 à 10:00 UTC. Les comparaisons sont calculées par les SQL fournis lors du build, pas par une requête live du portail. Les raccourcis sont des hypothèses pédagogiques explicites, pas des erreurs attribuées à Genie.",
+    "ontology": "L’ontologie décrit les objets métier, leurs relations, leur identité et ce que leurs états signifient. Elle permet de demander « de quel contrat, de quelle échéance ou de quel calcul parle-t-on ? » avant de compter.",
+    "semantic_layer": "La couche sémantique associe à ce vocabulaire des règles exécutables : population, dimensions, unités, métriques et traitement des absences. Les mêmes définitions peuvent être réutilisées par SQL, Genie et l’app.",
+    "implementation": "Socle de l’exercice : modèle métier explicite + vues SQL contract_review, fund_freshness, calculation_review + requêtes de métriques SA1/SA2/SB1/SB2. Extension native : définitions Unity Catalog metric views fournies séparément, à faire approuver, déployer et vérifier avant usage. Le diagramme n’est ni un moteur de graphe ni un service d’ontologie Databricks.",
+    "limits": "Un modèle partagé ne répare pas une source, ne prouve pas une cause, ne garantit pas les réponses de l’IA et ne remplace pas les droits. Il demande un propriétaire métier, des tests de grain/jointure et une version. Les bénéfices mesurés ici concernent les décisions sur ce petit jeu ; aucun gain de performance, de coût ou de précision générale n’est annoncé.",
+    "tracks": {
+      "contracts": {
+        "title": "Contrats · convertir n’est pas préserver",
+        "challenge": "Avant de révéler les résultats, prédisez : un montant normalisé prouve-t-il que la valeur fournisseur a été conservée ? Quel montant faut-il additionner ?",
+        "exercise": [
+          "2 min · Le métier propose le sens de « conservé ». L’IT prédit le résultat de SA0 sans exécuter SA1.",
+          "3 min · Explorez C002, C004 et C005. Nommez le contrat, le fournisseur, la version du mapping et les trois valeurs. Choisissez une relation et sa clé.",
+          "3 min · Comparez SA0 et SA1, puis SA2. Expliquez le contrat qui change de catégorie et le montant retenu. Consignez une limite.",
+          "4 min · Posez la question à Genie avec la définition ci-dessous. Comparez son SQL à SA1, sans lui donner les résultats chiffrés.",
+          "8 min · Complétez l’enquête Genie, inspectez la couverture et validez le contrat destiné à Builder."
+        ],
+        "entities": [
+          {
+            "id": "provider",
+            "label": "Fournisseur",
+            "meaning": "L’émetteur de la valeur contractuelle ; il ne définit pas l’estimation analytique.",
+            "grain": "Une identité provider_id.",
+            "source": "{{ns}}contract_observations.provider_id ; objet logique, sans table fournisseur dédiée."
+          },
+          {
+            "id": "contract",
+            "label": "Contrat",
+            "meaning": "L’objet dont on veut préserver la valeur, observé à une date métier.",
+            "grain": "Un contract_id dans ce snapshot à date unique ; une évolution multi-date exigerait contract_id + business_date.",
+            "source": "{{ns}}contract_observations → {{ns}}contract_review"
+          },
+          {
+            "id": "conversion",
+            "label": "Conversion observée",
+            "meaning": "La valeur normalisée et l’erreur éventuelle, avec une version du mapping. Une observation ne prouve pas la cause.",
+            "grain": "Une observation par contrat/date dans ce jeu ; pas d’historique d’exécutions.",
+            "source": "{{ns}}contract_observations.mapping_version, normalized_cents, conversion_error"
+          },
+          {
+            "id": "value",
+            "label": "Valeur & estimation",
+            "meaning": "Trois rôles différents : fournisseur autoritatif, normalisé à comparer, estimation analytique indépendante.",
+            "grain": "Trois attributs en centimes EUR ; NULL = preuve absente, jamais zéro.",
+            "source": "supplier_cents / normalized_cents / analytical_cents"
+          }
+        ],
+        "relations": [
+          {
+            "from": "provider",
+            "to": "contract",
+            "label": "Un fournisseur émet des contrats",
+            "cardinality": "1 → plusieurs",
+            "rule": "provider_id identifie le fournisseur de chaque contrat."
+          },
+          {
+            "from": "contract",
+            "to": "conversion",
+            "label": "Un contrat possède une observation de conversion",
+            "cardinality": "1 → 1 dans le snapshot",
+            "rule": "contract_id ; rattacher mapping_version et source_file, sans inventer un historique."
+          },
+          {
+            "from": "conversion",
+            "to": "value",
+            "label": "La conversion compare des valeurs de rôles distincts",
+            "cardinality": "1 → 3 rôles, chacun nullable",
+            "rule": "PRESERVED compare fournisseur et normalisé ; l’estimation ne participe pas à ce statut."
+          }
+        ],
+        "measures": [
+          {
+            "id": "preserved",
+            "label": "Contrats conservés",
+            "definition": "Nombre de lignes dont review_status = PRESERVED. Le statut exige un montant fournisseur connu, aucune erreur, un normalisé connu et identique.",
+            "unit": "contrats",
+            "grain": "contract_id, même date et filtres",
+            "limit": "Une conservation numérique n’autorise pas une livraison."
+          },
+          {
+            "id": "amount",
+            "label": "Montant fournisseur conservé",
+            "definition": "Somme de supplier_cents pour PRESERVED, divisée par 100. Les valeurs analytiques ne remplacent pas les valeurs fournisseur. La complétude fournisseur est 100 × COUNT(supplier_cents) / COUNT(*) sur tous les statuts, distincte du taux de conservation.",
+            "unit": "EUR",
+            "grain": "contrat puis agrégation selon le filtre",
+            "limit": "Somme d’une population vide = NULL ; montrer le nombre de montants connus."
+          },
+          {
+            "id": "rate",
+            "label": "Taux de conservation",
+            "definition": "100 × nombre conservé / nombre total de contrats. Réagréger numérateur et dénominateur ; ne pas moyenner les taux fournisseurs.",
+            "unit": "%",
+            "grain": "population filtrée",
+            "limit": "Dénominateur nul = NULL. Une exclusion de statut change la question."
+          }
+        ],
+        "sql_ids": [
+          "SA0",
+          "SA1",
+          "SA2"
+        ],
+        "genie_prompt": "Utilise contract_review pour définir « conservé » comme review_status = PRESERVED, sans utiliser l’estimation analytique. Sur le 20 octobre 2026, donne la population totale, le nombre conservé, le taux sur tous les contrats et la somme fournisseur conservée en euros, avec la complétude des montants fournisseur. Définition de supplier_coverage_pct : 100 × COUNT(supplier_cents) / COUNT(*), sur tous les contrats du périmètre, tous statuts inclus ; donne aussi le numérateur et le dénominateur. Ce taux de complétude est distinct du taux de conservation et de la part des montants connus conservés. Décline ensuite par fournisseur. Montre le SQL, les unités et les sources. Pourquoi un normalisé non NULL ne suffit-il pas ? N’invente pas de cause ni d’autorisation de livraison. Définition exacte de preserved_supplier_eur : SUM(CASE WHEN review_status = 'PRESERVED' THEN supplier_cents END) / 100.0. Si aucun contrat conservé ne possède de montant connu dans le groupe, la somme reste NULL, jamais 0 : aucun ELSE 0 ni COALESCE sur cette somme. Limite la sortie aux métriques définies ci-dessus ; ne crée pas de taux supplémentaire.",
+        "handoff": "Joindre le modèle métier, le contrat de métriques, SA1/SA2 et les preuves Genie. Builder doit réutiliser review_status et la définition fournisseur, afficher la définition des indicateurs et une trace contrat → source → mapping. Les constantes des résultats du mini-lab ne doivent pas entrer dans le prompt.",
+        "debrief": "Montrer une ambiguïté éliminée, un contre-exemple (C002 ou C005), la même définition dans deux surfaces et un propriétaire pour la règle. Le gain est une décision plus cohérente et explicable, pas une hausse annoncée du taux de réussite du modèle. Faites nommer le numérateur et le dénominateur de « couverture » : la complétude fournisseur et la part conservée des montants connus répondent à deux questions différentes."
+      },
+      "funds": {
+        "title": "Fonds · distinguer l’absence de l’incident",
+        "challenge": "Avant de révéler les résultats, prédisez : toutes les VL absentes sont-elles en retard ? Une ligne après jointure sur les calculs représente-t-elle toujours un fonds ?",
+        "exercise": [
+          "2 min · Prédisez les résultats de SB0 : absences et lignes jointes. Précisez ce que signifie « fonds en incident ». Ne consultez pas SB1.",
+          "3 min · Explorez F003, F005 puis F001 : échéance, observation, version et calculs. Identifiez les clés et la relation un-à-plusieurs.",
+          "3 min · Comparez SB0/SB1/SB2 : quels faux incidents disparaissent, et combien de fonds distincts correspondent aux calculs candidats ?",
+          "4 min · Posez à Genie la question avec heure, calendrier et grain explicites ; inspectez son SQL sans lui donner les résultats chiffrés.",
+          "8 min · Complétez l’enquête et vérifiez le contrat pour Builder. Échangez les rôles métier/IT."
+        ],
+        "entities": [
+          {
+            "id": "fund",
+            "label": "Fonds",
+            "meaning": "L’entité métier ; son identifiant ne suffit pas pour joindre des observations couvrant plusieurs dates.",
+            "grain": "fund_id ; une seule nav_date par fonds dans ce jeu.",
+            "source": "{{ns}}fund_expectations.fund_id"
+          },
+          {
+            "id": "expectation",
+            "label": "Échéance attendue",
+            "meaning": "L’obligation de recevoir une VL à une date et une heure, selon le calendrier. Une non-attente reste visible.",
+            "grain": "fund_id + nav_date ; expected, deadline_utc.",
+            "source": "{{ns}}fund_expectations"
+          },
+          {
+            "id": "observation",
+            "label": "VL reçue",
+            "meaning": "Une valeur, son heure de réception et sa version fournisseur. L’absence est une relation vide, pas une valeur à zéro.",
+            "grain": "Zéro ou une observation pour fund_id + nav_date dans ce snapshot.",
+            "source": "{{ns}}fund_observations → {{ns}}fund_freshness"
+          },
+          {
+            "id": "calculation",
+            "label": "Calcul consommateur",
+            "meaning": "Un résultat antérieur, son unité et la version qu’il a consommée. Plusieurs calculs peuvent dépendre du même fonds.",
+            "grain": "calculation_id ; fund_id est non unique.",
+            "source": "{{ns}}calculation_state → {{ns}}calculation_review"
+          }
+        ],
+        "relations": [
+          {
+            "from": "fund",
+            "to": "expectation",
+            "label": "Un fonds suit un calendrier de VL",
+            "cardinality": "1 → 1 échéance dans ce snapshot",
+            "rule": "Le calendrier définit le dénominateur des VL attendues."
+          },
+          {
+            "from": "expectation",
+            "to": "observation",
+            "label": "L’échéance peut être satisfaite par une observation",
+            "cardinality": "1 → 0..1",
+            "rule": "LEFT JOIN sur fund_id ET nav_date ; garder les lignes absentes et l’heure de référence."
+          },
+          {
+            "from": "observation",
+            "to": "calculation",
+            "label": "Une version fournisseur alimente plusieurs calculs",
+            "cardinality": "1 → plusieurs ; source parfois absente",
+            "rule": "Comparer consumed_source_version à source_version ; compter les calculation_id séparément des fund_id. La jointure actuelle par fund_id est limitée au snapshot à date unique."
+          }
+        ],
+        "measures": [
+          {
+            "id": "missing",
+            "label": "VL attendues en retard et non reçues",
+            "definition": "Nombre de lignes de fund_freshness dont arrival_status = MISSING, au 20/10/2026 à 10:00 UTC.",
+            "unit": "fonds/date",
+            "grain": "fund_id + nav_date",
+            "limit": "WAITING, NOT_EXPECTED et LATE_RECEIVED ne sont pas des absences encore en retard."
+          },
+          {
+            "id": "rate",
+            "label": "Taux d’absences en retard",
+            "definition": "100 × MISSING / nombre de lignes expected = 1. Le calendrier donne le dénominateur ; ne pas compter les lignes de calcul.",
+            "unit": "% des VL attendues",
+            "grain": "population et heure filtrées",
+            "limit": "Dénominateur nul = NULL ; pas de rafraîchissement live implicite."
+          },
+          {
+            "id": "impact",
+            "label": "Calculs candidats et fonds concernés",
+            "definition": "COUNT DISTINCT calculation_id, puis COUNT DISTINCT fund_id, limités à RECOMPUTE_CANDIDATE. Deux mesures de grains différents.",
+            "unit": "calculs / fonds distincts",
+            "grain": "calculation_id pour les calculs, fund_id pour les fonds",
+            "limit": "Ce sont des candidats à examiner ; aucune exécution ni fermeture transitive du graphe."
+          }
+        ],
+        "sql_ids": [
+          "SB0",
+          "SB1",
+          "SB2"
+        ],
+        "genie_prompt": "À 10:00 UTC le 20 octobre 2026, utilise fund_freshness pour compter les VL MISSING parmi celles expected = 1, avec dénominateur et taux. Explique pourquoi WAITING, NOT_EXPECTED et LATE_RECEIVED ne désignent pas la même situation. Avec calculation_review, donne séparément le nombre de calculation_id distincts RECOMPUTE_CANDIDATE et de fund_id distincts concernés. Montre les SQL, clés, grains et versions. Ne compte pas les lignes d’une jointure un-à-plusieurs comme des fonds.",
+        "handoff": "Joindre le modèle fonds → échéance → observation → calcul, SB1/SB2 et le SQL Genie. Builder doit lire les statuts des vues communes, séparer les compteurs fonds/calculs et montrer la preuve de version. Réutiliser les définitions ; ne pas créer une nouvelle règle « NULL = incident ».",
+        "debrief": "Montrer un faux incident évité, un chemin d’impact expliqué et deux compteurs de grains différents. Tester aussi la limite : changer le calendrier change la définition attendue ; le modèle ne décide pas du calendrier à la place du métier."
+      }
+    }
+  },
+  "semantic_results": {
+    "engine": "SQLite local, jeu synthétique figé ; aucune requête live depuis le portail",
+    "queries": {
+      "SA0": [
+        {
+          "population": 6,
+          "treated_as_preserved": 4,
+          "normalized_eur": 19430.25
+        }
+      ],
+      "SA1": [
+        {
+          "population": 6,
+          "preserved_contracts": 3,
+          "preservation_pct": 50.0,
+          "preserved_supplier_eur": 14600.25,
+          "known_supplier_amounts": 5,
+          "supplier_coverage_pct": 83.33333333333333,
+          "known_supplier_eur": 66400.25
+        }
+      ],
+      "SA2": [
+        {
+          "provider_id": "P01",
+          "population": 2,
+          "preserved_contracts": 2,
+          "preservation_pct": 100.0,
+          "preserved_supplier_eur": 8200.25
+        },
+        {
+          "provider_id": "P02",
+          "population": 2,
+          "preserved_contracts": 0,
+          "preservation_pct": 0.0,
+          "preserved_supplier_eur": null
+        },
+        {
+          "provider_id": "P03",
+          "population": 2,
+          "preserved_contracts": 1,
+          "preservation_pct": 50.0,
+          "preserved_supplier_eur": 6400.0
+        }
+      ],
+      "SB0": [
+        {
+          "absent_observations": 3,
+          "joined_rows": 8
+        }
+      ],
+      "SB1": [
+        {
+          "population": 6,
+          "expected_funds": 5,
+          "overdue_missing": 1,
+          "waiting_funds": 1,
+          "not_expected_funds": 1,
+          "late_received_funds": 1,
+          "overdue_pct": 20.0
+        }
+      ],
+      "SB2": [
+        {
+          "calculations": 6,
+          "recompute_candidates": 3,
+          "affected_funds": 2,
+          "waiting_calculations": 2
+        }
+      ]
+    },
+    "contracts": [
+      {
+        "contract_id": "C001",
+        "business_date": "2026-10-20",
+        "provider_id": "P01",
+        "format_family": "json-v2",
+        "source_file": "p01_20261020.json",
+        "mapping_version": "m2",
+        "supplier_cents": 20025,
+        "normalized_cents": 20025,
+        "analytical_cents": 20100,
+        "conversion_error": null,
+        "review_status": "PRESERVED",
+        "normalization_delta_cents": 0
+      },
+      {
+        "contract_id": "C002",
+        "business_date": "2026-10-20",
+        "provider_id": "P02",
+        "format_family": "legacy-csv",
+        "source_file": "p02_20261020.csv",
+        "mapping_version": "m1",
+        "supplier_cents": 4830000,
+        "normalized_cents": 483000,
+        "analytical_cents": 4900000,
+        "conversion_error": null,
+        "review_status": "VALUE_CHANGED",
+        "normalization_delta_cents": -4347000
+      },
+      {
+        "contract_id": "C003",
+        "business_date": "2026-10-20",
+        "provider_id": "P02",
+        "format_family": "legacy-csv",
+        "source_file": "p02_20261020.csv",
+        "mapping_version": "m1",
+        "supplier_cents": 350000,
+        "normalized_cents": null,
+        "analytical_cents": null,
+        "conversion_error": "INVALID_DECIMAL",
+        "review_status": "CONVERSION_FAILED",
+        "normalization_delta_cents": null
+      },
+      {
+        "contract_id": "C004",
+        "business_date": "2026-10-20",
+        "provider_id": "P03",
+        "format_family": "custom-xml",
+        "source_file": "p03_20261020.xml",
+        "mapping_version": "m2",
+        "supplier_cents": null,
+        "normalized_cents": null,
+        "analytical_cents": null,
+        "conversion_error": "AMOUNT_MISSING",
+        "review_status": "SOURCE_INCOMPLETE",
+        "normalization_delta_cents": null
+      },
+      {
+        "contract_id": "C005",
+        "business_date": "2026-10-20",
+        "provider_id": "P01",
+        "format_family": "json-v2",
+        "source_file": "p01_20261020.json",
+        "mapping_version": "m2",
+        "supplier_cents": 800000,
+        "normalized_cents": 800000,
+        "analytical_cents": 825000,
+        "conversion_error": null,
+        "review_status": "PRESERVED",
+        "normalization_delta_cents": 0
+      },
+      {
+        "contract_id": "C006",
+        "business_date": "2026-10-20",
+        "provider_id": "P03",
+        "format_family": "custom-xml",
+        "source_file": "p03_20261020.xml",
+        "mapping_version": "m2",
+        "supplier_cents": 640000,
+        "normalized_cents": 640000,
+        "analytical_cents": null,
+        "conversion_error": null,
+        "review_status": "PRESERVED",
+        "normalization_delta_cents": 0
+      }
+    ],
+    "funds": [
+      {
+        "fund_id": "F001",
+        "nav_date": "2026-10-20",
+        "expected": 1,
+        "deadline_utc": "2026-10-20 08:00:00",
+        "calendar_note": "Jour de valorisation",
+        "nav_eur": 102,
+        "previous_nav_eur": 100,
+        "received_at_utc": "2026-10-20 07:30:00",
+        "source_version": 2,
+        "source_file": "f001_v2.csv",
+        "arrival_status": "ON_TIME",
+        "daily_return_pct": 2.0000000000000018
+      },
+      {
+        "fund_id": "F002",
+        "nav_date": "2026-10-20",
+        "expected": 1,
+        "deadline_utc": "2026-10-20 08:00:00",
+        "calendar_note": "Jour de valorisation",
+        "nav_eur": 100,
+        "previous_nav_eur": 100,
+        "received_at_utc": "2026-10-20 07:45:00",
+        "source_version": 1,
+        "source_file": "f002_v1.csv",
+        "arrival_status": "ON_TIME",
+        "daily_return_pct": 0.0
+      },
+      {
+        "fund_id": "F003",
+        "nav_date": "2026-10-20",
+        "expected": 1,
+        "deadline_utc": "2026-10-20 08:00:00",
+        "calendar_note": "Jour de valorisation",
+        "nav_eur": null,
+        "previous_nav_eur": null,
+        "received_at_utc": null,
+        "source_version": null,
+        "source_file": null,
+        "arrival_status": "MISSING",
+        "daily_return_pct": null
+      },
+      {
+        "fund_id": "F004",
+        "nav_date": "2026-10-20",
+        "expected": 0,
+        "deadline_utc": "2026-10-20 08:00:00",
+        "calendar_note": "Pas de VL attendue selon le calendrier de ce fonds",
+        "nav_eur": null,
+        "previous_nav_eur": null,
+        "received_at_utc": null,
+        "source_version": null,
+        "source_file": null,
+        "arrival_status": "NOT_EXPECTED",
+        "daily_return_pct": null
+      },
+      {
+        "fund_id": "F005",
+        "nav_date": "2026-10-20",
+        "expected": 1,
+        "deadline_utc": "2026-10-20 12:00:00",
+        "calendar_note": "Échéance à midi UTC",
+        "nav_eur": null,
+        "previous_nav_eur": null,
+        "received_at_utc": null,
+        "source_version": null,
+        "source_file": null,
+        "arrival_status": "WAITING",
+        "daily_return_pct": null
+      },
+      {
+        "fund_id": "F006",
+        "nav_date": "2026-10-20",
+        "expected": 1,
+        "deadline_utc": "2026-10-20 08:00:00",
+        "calendar_note": "Jour de valorisation",
+        "nav_eur": 202,
+        "previous_nav_eur": 200,
+        "received_at_utc": "2026-10-20 09:30:00",
+        "source_version": 2,
+        "source_file": "f006_v2.csv",
+        "arrival_status": "LATE_RECEIVED",
+        "daily_return_pct": 1.0000000000000009
+      }
+    ],
+    "calculations": [
+      {
+        "fund_id": "F001",
+        "calculation_id": "F001:daily_return",
+        "consumed_source_version": 1,
+        "output_value": 1,
+        "output_unit": "percent",
+        "source_version": 2,
+        "arrival_status": "ON_TIME",
+        "calculation_status": "RECOMPUTE_CANDIDATE"
+      },
+      {
+        "fund_id": "F001",
+        "calculation_id": "F001:risk_score",
+        "consumed_source_version": 1,
+        "output_value": 3,
+        "output_unit": "score",
+        "source_version": 2,
+        "arrival_status": "ON_TIME",
+        "calculation_status": "RECOMPUTE_CANDIDATE"
+      },
+      {
+        "fund_id": "F002",
+        "calculation_id": "F002:daily_return",
+        "consumed_source_version": 1,
+        "output_value": 0,
+        "output_unit": "percent",
+        "source_version": 1,
+        "arrival_status": "ON_TIME",
+        "calculation_status": "CURRENT"
+      },
+      {
+        "fund_id": "F003",
+        "calculation_id": "F003:daily_return",
+        "consumed_source_version": 1,
+        "output_value": 0.5,
+        "output_unit": "percent",
+        "source_version": null,
+        "arrival_status": "MISSING",
+        "calculation_status": "WAIT_SOURCE"
+      },
+      {
+        "fund_id": "F003",
+        "calculation_id": "F003:risk_score",
+        "consumed_source_version": 1,
+        "output_value": 4,
+        "output_unit": "score",
+        "source_version": null,
+        "arrival_status": "MISSING",
+        "calculation_status": "WAIT_SOURCE"
+      },
+      {
+        "fund_id": "F006",
+        "calculation_id": "F006:daily_return",
+        "consumed_source_version": 1,
+        "output_value": 0.5,
+        "output_unit": "percent",
+        "source_version": 2,
+        "arrival_status": "LATE_RECEIVED",
+        "calculation_status": "RECOMPUTE_CANDIDATE"
+      }
+    ]
+  }
+}

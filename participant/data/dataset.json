@@ -1,0 +1,322 @@
+{
+  "version": "harvest-lab-2026-11-16-v1",
+  "as_of_utc": "2026-10-20 10:00:00",
+  "description": "Petit jeu pédagogique synthétique. Observations de conversion et de calcul préparées, sans données client, sans preuve de migration ni de performance.",
+  "tables": {
+    "contract_observations": {
+      "columns": [
+        [
+          "contract_id",
+          "STRING"
+        ],
+        [
+          "business_date",
+          "STRING"
+        ],
+        [
+          "provider_id",
+          "STRING"
+        ],
+        [
+          "format_family",
+          "STRING"
+        ],
+        [
+          "source_file",
+          "STRING"
+        ],
+        [
+          "mapping_version",
+          "STRING"
+        ],
+        [
+          "supplier_cents",
+          "BIGINT"
+        ],
+        [
+          "normalized_cents",
+          "BIGINT"
+        ],
+        [
+          "analytical_cents",
+          "BIGINT"
+        ],
+        [
+          "conversion_error",
+          "STRING"
+        ]
+      ],
+      "rows": [
+        [
+          "C001",
+          "2026-10-20",
+          "P01",
+          "json-v2",
+          "p01_20261020.json",
+          "m2",
+          20025,
+          20025,
+          20100,
+          null
+        ],
+        [
+          "C002",
+          "2026-10-20",
+          "P02",
+          "legacy-csv",
+          "p02_20261020.csv",
+          "m1",
+          4830000,
+          483000,
+          4900000,
+          null
+        ],
+        [
+          "C003",
+          "2026-10-20",
+          "P02",
+          "legacy-csv",
+          "p02_20261020.csv",
+          "m1",
+          350000,
+          null,
+          null,
+          "INVALID_DECIMAL"
+        ],
+        [
+          "C004",
+          "2026-10-20",
+          "P03",
+          "custom-xml",
+          "p03_20261020.xml",
+          "m2",
+          null,
+          null,
+          null,
+          "AMOUNT_MISSING"
+        ],
+        [
+          "C005",
+          "2026-10-20",
+          "P01",
+          "json-v2",
+          "p01_20261020.json",
+          "m2",
+          800000,
+          800000,
+          825000,
+          null
+        ],
+        [
+          "C006",
+          "2026-10-20",
+          "P03",
+          "custom-xml",
+          "p03_20261020.xml",
+          "m2",
+          640000,
+          640000,
+          null,
+          null
+        ]
+      ]
+    },
+    "fund_expectations": {
+      "columns": [
+        [
+          "fund_id",
+          "STRING"
+        ],
+        [
+          "nav_date",
+          "STRING"
+        ],
+        [
+          "expected",
+          "BIGINT"
+        ],
+        [
+          "deadline_utc",
+          "STRING"
+        ],
+        [
+          "calendar_note",
+          "STRING"
+        ]
+      ],
+      "rows": [
+        [
+          "F001",
+          "2026-10-20",
+          1,
+          "2026-10-20 08:00:00",
+          "Jour de valorisation"
+        ],
+        [
+          "F002",
+          "2026-10-20",
+          1,
+          "2026-10-20 08:00:00",
+          "Jour de valorisation"
+        ],
+        [
+          "F003",
+          "2026-10-20",
+          1,
+          "2026-10-20 08:00:00",
+          "Jour de valorisation"
+        ],
+        [
+          "F004",
+          "2026-10-20",
+          0,
+          "2026-10-20 08:00:00",
+          "Pas de VL attendue selon le calendrier de ce fonds"
+        ],
+        [
+          "F005",
+          "2026-10-20",
+          1,
+          "2026-10-20 12:00:00",
+          "Échéance à midi UTC"
+        ],
+        [
+          "F006",
+          "2026-10-20",
+          1,
+          "2026-10-20 08:00:00",
+          "Jour de valorisation"
+        ]
+      ]
+    },
+    "fund_observations": {
+      "columns": [
+        [
+          "fund_id",
+          "STRING"
+        ],
+        [
+          "nav_date",
+          "STRING"
+        ],
+        [
+          "nav_eur",
+          "DECIMAL(18,6)"
+        ],
+        [
+          "previous_nav_eur",
+          "DECIMAL(18,6)"
+        ],
+        [
+          "received_at_utc",
+          "STRING"
+        ],
+        [
+          "source_version",
+          "BIGINT"
+        ],
+        [
+          "source_file",
+          "STRING"
+        ]
+      ],
+      "rows": [
+        [
+          "F001",
+          "2026-10-20",
+          102,
+          100,
+          "2026-10-20 07:30:00",
+          2,
+          "f001_v2.csv"
+        ],
+        [
+          "F002",
+          "2026-10-20",
+          100,
+          100,
+          "2026-10-20 07:45:00",
+          1,
+          "f002_v1.csv"
+        ],
+        [
+          "F006",
+          "2026-10-20",
+          202,
+          200,
+          "2026-10-20 09:30:00",
+          2,
+          "f006_v2.csv"
+        ]
+      ]
+    },
+    "calculation_state": {
+      "columns": [
+        [
+          "fund_id",
+          "STRING"
+        ],
+        [
+          "calculation_id",
+          "STRING"
+        ],
+        [
+          "consumed_source_version",
+          "BIGINT"
+        ],
+        [
+          "output_value",
+          "DECIMAL(18,6)"
+        ],
+        [
+          "output_unit",
+          "STRING"
+        ]
+      ],
+      "rows": [
+        [
+          "F001",
+          "F001:daily_return",
+          1,
+          1,
+          "percent"
+        ],
+        [
+          "F001",
+          "F001:risk_score",
+          1,
+          3,
+          "score"
+        ],
+        [
+          "F002",
+          "F002:daily_return",
+          1,
+          0,
+          "percent"
+        ],
+        [
+          "F003",
+          "F003:daily_return",
+          1,
+          0.5,
+          "percent"
+        ],
+        [
+          "F003",
+          "F003:risk_score",
+          1,
+          4,
+          "score"
+        ],
+        [
+          "F006",
+          "F006:daily_return",
+          1,
+          0.5,
+          "percent"
+        ]
+      ]
+    }
+  }
+}

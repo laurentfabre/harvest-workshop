@@ -1,0 +1,4 @@
+fund_id,nav_date,nav_eur,previous_nav_eur,received_at_utc,source_version,source_file
+F001,2026-10-20,102,100,2026-10-20 07:30:00,2,f001_v2.csv
+F002,2026-10-20,100,100,2026-10-20 07:45:00,1,f002_v1.csv
+F006,2026-10-20,202,200,2026-10-20 09:30:00,2,f006_v2.csv

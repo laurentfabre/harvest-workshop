@@ -1,0 +1,305 @@
+{
+  "engine": "SQLite local, jeu synthétique figé ; aucune requête live depuis le portail",
+  "queries": {
+    "SA0": [
+      {
+        "population": 6,
+        "treated_as_preserved": 4,
+        "normalized_eur": 19430.25
+      }
+    ],
+    "SA1": [
+      {
+        "population": 6,
+        "preserved_contracts": 3,
+        "preservation_pct": 50.0,
+        "preserved_supplier_eur": 14600.25,
+        "known_supplier_amounts": 5,
+        "supplier_coverage_pct": 83.33333333333333,
+        "known_supplier_eur": 66400.25
+      }
+    ],
+    "SA2": [
+      {
+        "provider_id": "P01",
+        "population": 2,
+        "preserved_contracts": 2,
+        "preservation_pct": 100.0,
+        "preserved_supplier_eur": 8200.25
+      },
+      {
+        "provider_id": "P02",
+        "population": 2,
+        "preserved_contracts": 0,
+        "preservation_pct": 0.0,
+        "preserved_supplier_eur": null
+      },
+      {
+        "provider_id": "P03",
+        "population": 2,
+        "preserved_contracts": 1,
+        "preservation_pct": 50.0,
+        "preserved_supplier_eur": 6400.0
+      }
+    ],
+    "SB0": [
+      {
+        "absent_observations": 3,
+        "joined_rows": 8
+      }
+    ],
+    "SB1": [
+      {
+        "population": 6,
+        "expected_funds": 5,
+        "overdue_missing": 1,
+        "waiting_funds": 1,
+        "not_expected_funds": 1,
+        "late_received_funds": 1,
+        "overdue_pct": 20.0
+      }
+    ],
+    "SB2": [
+      {
+        "calculations": 6,
+        "recompute_candidates": 3,
+        "affected_funds": 2,
+        "waiting_calculations": 2
+      }
+    ]
+  },
+  "contracts": [
+    {
+      "contract_id": "C001",
+      "business_date": "2026-10-20",
+      "provider_id": "P01",
+      "format_family": "json-v2",
+      "source_file": "p01_20261020.json",
+      "mapping_version": "m2",
+      "supplier_cents": 20025,
+      "normalized_cents": 20025,
+      "analytical_cents": 20100,
+      "conversion_error": null,
+      "review_status": "PRESERVED",
+      "normalization_delta_cents": 0
+    },
+    {
+      "contract_id": "C002",
+      "business_date": "2026-10-20",
+      "provider_id": "P02",
+      "format_family": "legacy-csv",
+      "source_file": "p02_20261020.csv",
+      "mapping_version": "m1",
+      "supplier_cents": 4830000,
+      "normalized_cents": 483000,
+      "analytical_cents": 4900000,
+      "conversion_error": null,
+      "review_status": "VALUE_CHANGED",
+      "normalization_delta_cents": -4347000
+    },
+    {
+      "contract_id": "C003",
+      "business_date": "2026-10-20",
+      "provider_id": "P02",
+      "format_family": "legacy-csv",
+      "source_file": "p02_20261020.csv",
+      "mapping_version": "m1",
+      "supplier_cents": 350000,
+      "normalized_cents": null,
+      "analytical_cents": null,
+      "conversion_error": "INVALID_DECIMAL",
+      "review_status": "CONVERSION_FAILED",
+      "normalization_delta_cents": null
+    },
+    {
+      "contract_id": "C004",
+      "business_date": "2026-10-20",
+      "provider_id": "P03",
+      "format_family": "custom-xml",
+      "source_file": "p03_20261020.xml",
+      "mapping_version": "m2",
+      "supplier_cents": null,
+      "normalized_cents": null,
+      "analytical_cents": null,
+      "conversion_error": "AMOUNT_MISSING",
+      "review_status": "SOURCE_INCOMPLETE",
+      "normalization_delta_cents": null
+    },
+    {
+      "contract_id": "C005",
+      "business_date": "2026-10-20",
+      "provider_id": "P01",
+      "format_family": "json-v2",
+      "source_file": "p01_20261020.json",
+      "mapping_version": "m2",
+      "supplier_cents": 800000,
+      "normalized_cents": 800000,
+      "analytical_cents": 825000,
+      "conversion_error": null,
+      "review_status": "PRESERVED",
+      "normalization_delta_cents": 0
+    },
+    {
+      "contract_id": "C006",
+      "business_date": "2026-10-20",
+      "provider_id": "P03",
+      "format_family": "custom-xml",
+      "source_file": "p03_20261020.xml",
+      "mapping_version": "m2",
+      "supplier_cents": 640000,
+      "normalized_cents": 640000,
+      "analytical_cents": null,
+      "conversion_error": null,
+      "review_status": "PRESERVED",
+      "normalization_delta_cents": 0
+    }
+  ],
+  "funds": [
+    {
+      "fund_id": "F001",
+      "nav_date": "2026-10-20",
+      "expected": 1,
+      "deadline_utc": "2026-10-20 08:00:00",
+      "calendar_note": "Jour de valorisation",
+      "nav_eur": 102,
+      "previous_nav_eur": 100,
+      "received_at_utc": "2026-10-20 07:30:00",
+      "source_version": 2,
+      "source_file": "f001_v2.csv",
+      "arrival_status": "ON_TIME",
+      "daily_return_pct": 2.0000000000000018
+    },
+    {
+      "fund_id": "F002",
+      "nav_date": "2026-10-20",
+      "expected": 1,
+      "deadline_utc": "2026-10-20 08:00:00",
+      "calendar_note": "Jour de valorisation",
+      "nav_eur": 100,
+      "previous_nav_eur": 100,
+      "received_at_utc": "2026-10-20 07:45:00",
+      "source_version": 1,
+      "source_file": "f002_v1.csv",
+      "arrival_status": "ON_TIME",
+      "daily_return_pct": 0.0
+    },
+    {
+      "fund_id": "F003",
+      "nav_date": "2026-10-20",
+      "expected": 1,
+      "deadline_utc": "2026-10-20 08:00:00",
+      "calendar_note": "Jour de valorisation",
+      "nav_eur": null,
+      "previous_nav_eur": null,
+      "received_at_utc": null,
+      "source_version": null,
+      "source_file": null,
+      "arrival_status": "MISSING",
+      "daily_return_pct": null
+    },
+    {
+      "fund_id": "F004",
+      "nav_date": "2026-10-20",
+      "expected": 0,
+      "deadline_utc": "2026-10-20 08:00:00",
+      "calendar_note": "Pas de VL attendue selon le calendrier de ce fonds",
+      "nav_eur": null,
+      "previous_nav_eur": null,
+      "received_at_utc": null,
+      "source_version": null,
+      "source_file": null,
+      "arrival_status": "NOT_EXPECTED",
+      "daily_return_pct": null
+    },
+    {
+      "fund_id": "F005",
+      "nav_date": "2026-10-20",
+      "expected": 1,
+      "deadline_utc": "2026-10-20 12:00:00",
+      "calendar_note": "Échéance à midi UTC",
+      "nav_eur": null,
+      "previous_nav_eur": null,
+      "received_at_utc": null,
+      "source_version": null,
+      "source_file": null,
+      "arrival_status": "WAITING",
+      "daily_return_pct": null
+    },
+    {
+      "fund_id": "F006",
+      "nav_date": "2026-10-20",
+      "expected": 1,
+      "deadline_utc": "2026-10-20 08:00:00",
+      "calendar_note": "Jour de valorisation",
+      "nav_eur": 202,
+      "previous_nav_eur": 200,
+      "received_at_utc": "2026-10-20 09:30:00",
+      "source_version": 2,
+      "source_file": "f006_v2.csv",
+      "arrival_status": "LATE_RECEIVED",
+      "daily_return_pct": 1.0000000000000009
+    }
+  ],
+  "calculations": [
+    {
+      "fund_id": "F001",
+      "calculation_id": "F001:daily_return",
+      "consumed_source_version": 1,
+      "output_value": 1,
+      "output_unit": "percent",
+      "source_version": 2,
+      "arrival_status": "ON_TIME",
+      "calculation_status": "RECOMPUTE_CANDIDATE"
+    },
+    {
+      "fund_id": "F001",
+      "calculation_id": "F001:risk_score",
+      "consumed_source_version": 1,
+      "output_value": 3,
+      "output_unit": "score",
+      "source_version": 2,
+      "arrival_status": "ON_TIME",
+      "calculation_status": "RECOMPUTE_CANDIDATE"
+    },
+    {
+      "fund_id": "F002",
+      "calculation_id": "F002:daily_return",
+      "consumed_source_version": 1,
+      "output_value": 0,
+      "output_unit": "percent",
+      "source_version": 1,
+      "arrival_status": "ON_TIME",
+      "calculation_status": "CURRENT"
+    },
+    {
+      "fund_id": "F003",
+      "calculation_id": "F003:daily_return",
+      "consumed_source_version": 1,
+      "output_value": 0.5,
+      "output_unit": "percent",
+      "source_version": null,
+      "arrival_status": "MISSING",
+      "calculation_status": "WAIT_SOURCE"
+    },
+    {
+      "fund_id": "F003",
+      "calculation_id": "F003:risk_score",
+      "consumed_source_version": 1,
+      "output_value": 4,
+      "output_unit": "score",
+      "source_version": null,
+      "arrival_status": "MISSING",
+      "calculation_status": "WAIT_SOURCE"
+    },
+    {
+      "fund_id": "F006",
+      "calculation_id": "F006:daily_return",
+      "consumed_source_version": 1,
+      "output_value": 0.5,
+      "output_unit": "percent",
+      "source_version": 2,
+      "arrival_status": "LATE_RECEIVED",
+      "calculation_status": "RECOMPUTE_CANDIDATE"
+    }
+  ]
+}

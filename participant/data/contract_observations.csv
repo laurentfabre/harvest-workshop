@@ -1,0 +1,7 @@
+contract_id,business_date,provider_id,format_family,source_file,mapping_version,supplier_cents,normalized_cents,analytical_cents,conversion_error
+C001,2026-10-20,P01,json-v2,p01_20261020.json,m2,20025,20025,20100,
+C002,2026-10-20,P02,legacy-csv,p02_20261020.csv,m1,4830000,483000,4900000,
+C003,2026-10-20,P02,legacy-csv,p02_20261020.csv,m1,350000,,,INVALID_DECIMAL
+C004,2026-10-20,P03,custom-xml,p03_20261020.xml,m2,,,,AMOUNT_MISSING
+C005,2026-10-20,P01,json-v2,p01_20261020.json,m2,800000,800000,825000,
+C006,2026-10-20,P03,custom-xml,p03_20261020.xml,m2,640000,640000,,

@@ -1,0 +1,207 @@
+{
+  "version": "harvest-semantics-v1",
+  "title": "Même donnée. Un sens partagé.",
+  "disclosure": "Laboratoire local sur le snapshot synthétique au 20/10/2026 à 10:00 UTC. Les comparaisons sont calculées par les SQL fournis lors du build, pas par une requête live du portail. Les raccourcis sont des hypothèses pédagogiques explicites, pas des erreurs attribuées à Genie.",
+  "ontology": "L’ontologie décrit les objets métier, leurs relations, leur identité et ce que leurs états signifient. Elle permet de demander « de quel contrat, de quelle échéance ou de quel calcul parle-t-on ? » avant de compter.",
+  "semantic_layer": "La couche sémantique associe à ce vocabulaire des règles exécutables : population, dimensions, unités, métriques et traitement des absences. Les mêmes définitions peuvent être réutilisées par SQL, Genie et l’app.",
+  "implementation": "Socle de l’exercice : modèle métier explicite + vues SQL contract_review, fund_freshness, calculation_review + requêtes de métriques SA1/SA2/SB1/SB2. Extension native : définitions Unity Catalog metric views fournies séparément, à faire approuver, déployer et vérifier avant usage. Le diagramme n’est ni un moteur de graphe ni un service d’ontologie Databricks.",
+  "limits": "Un modèle partagé ne répare pas une source, ne prouve pas une cause, ne garantit pas les réponses de l’IA et ne remplace pas les droits. Il demande un propriétaire métier, des tests de grain/jointure et une version. Les bénéfices mesurés ici concernent les décisions sur ce petit jeu ; aucun gain de performance, de coût ou de précision générale n’est annoncé.",
+  "tracks": {
+    "contracts": {
+      "title": "Contrats · convertir n’est pas préserver",
+      "challenge": "Avant de révéler les résultats, prédisez : un montant normalisé prouve-t-il que la valeur fournisseur a été conservée ? Quel montant faut-il additionner ?",
+      "exercise": [
+        "2 min · Le métier propose le sens de « conservé ». L’IT prédit le résultat de SA0 sans exécuter SA1.",
+        "3 min · Explorez C002, C004 et C005. Nommez le contrat, le fournisseur, la version du mapping et les trois valeurs. Choisissez une relation et sa clé.",
+        "3 min · Comparez SA0 et SA1, puis SA2. Expliquez le contrat qui change de catégorie et le montant retenu. Consignez une limite.",
+        "4 min · Posez la question à Genie avec la définition ci-dessous. Comparez son SQL à SA1, sans lui donner les résultats chiffrés.",
+        "8 min · Complétez l’enquête Genie, inspectez la couverture et validez le contrat destiné à Builder."
+      ],
+      "entities": [
+        {
+          "id": "provider",
+          "label": "Fournisseur",
+          "meaning": "L’émetteur de la valeur contractuelle ; il ne définit pas l’estimation analytique.",
+          "grain": "Une identité provider_id.",
+          "source": "{{ns}}contract_observations.provider_id ; objet logique, sans table fournisseur dédiée."
+        },
+        {
+          "id": "contract",
+          "label": "Contrat",
+          "meaning": "L’objet dont on veut préserver la valeur, observé à une date métier.",
+          "grain": "Un contract_id dans ce snapshot à date unique ; une évolution multi-date exigerait contract_id + business_date.",
+          "source": "{{ns}}contract_observations → {{ns}}contract_review"
+        },
+        {
+          "id": "conversion",
+          "label": "Conversion observée",
+          "meaning": "La valeur normalisée et l’erreur éventuelle, avec une version du mapping. Une observation ne prouve pas la cause.",
+          "grain": "Une observation par contrat/date dans ce jeu ; pas d’historique d’exécutions.",
+          "source": "{{ns}}contract_observations.mapping_version, normalized_cents, conversion_error"
+        },
+        {
+          "id": "value",
+          "label": "Valeur & estimation",
+          "meaning": "Trois rôles différents : fournisseur autoritatif, normalisé à comparer, estimation analytique indépendante.",
+          "grain": "Trois attributs en centimes EUR ; NULL = preuve absente, jamais zéro.",
+          "source": "supplier_cents / normalized_cents / analytical_cents"
+        }
+      ],
+      "relations": [
+        {
+          "from": "provider",
+          "to": "contract",
+          "label": "Un fournisseur émet des contrats",
+          "cardinality": "1 → plusieurs",
+          "rule": "provider_id identifie le fournisseur de chaque contrat."
+        },
+        {
+          "from": "contract",
+          "to": "conversion",
+          "label": "Un contrat possède une observation de conversion",
+          "cardinality": "1 → 1 dans le snapshot",
+          "rule": "contract_id ; rattacher mapping_version et source_file, sans inventer un historique."
+        },
+        {
+          "from": "conversion",
+          "to": "value",
+          "label": "La conversion compare des valeurs de rôles distincts",
+          "cardinality": "1 → 3 rôles, chacun nullable",
+          "rule": "PRESERVED compare fournisseur et normalisé ; l’estimation ne participe pas à ce statut."
+        }
+      ],
+      "measures": [
+        {
+          "id": "preserved",
+          "label": "Contrats conservés",
+          "definition": "Nombre de lignes dont review_status = PRESERVED. Le statut exige un montant fournisseur connu, aucune erreur, un normalisé connu et identique.",
+          "unit": "contrats",
+          "grain": "contract_id, même date et filtres",
+          "limit": "Une conservation numérique n’autorise pas une livraison."
+        },
+        {
+          "id": "amount",
+          "label": "Montant fournisseur conservé",
+          "definition": "Somme de supplier_cents pour PRESERVED, divisée par 100. Les valeurs analytiques ne remplacent pas les valeurs fournisseur. La complétude fournisseur est 100 × COUNT(supplier_cents) / COUNT(*) sur tous les statuts, distincte du taux de conservation.",
+          "unit": "EUR",
+          "grain": "contrat puis agrégation selon le filtre",
+          "limit": "Somme d’une population vide = NULL ; montrer le nombre de montants connus."
+        },
+        {
+          "id": "rate",
+          "label": "Taux de conservation",
+          "definition": "100 × nombre conservé / nombre total de contrats. Réagréger numérateur et dénominateur ; ne pas moyenner les taux fournisseurs.",
+          "unit": "%",
+          "grain": "population filtrée",
+          "limit": "Dénominateur nul = NULL. Une exclusion de statut change la question."
+        }
+      ],
+      "sql_ids": [
+        "SA0",
+        "SA1",
+        "SA2"
+      ],
+      "genie_prompt": "Utilise contract_review pour définir « conservé » comme review_status = PRESERVED, sans utiliser l’estimation analytique. Sur le 20 octobre 2026, donne la population totale, le nombre conservé, le taux sur tous les contrats et la somme fournisseur conservée en euros, avec la complétude des montants fournisseur. Définition de supplier_coverage_pct : 100 × COUNT(supplier_cents) / COUNT(*), sur tous les contrats du périmètre, tous statuts inclus ; donne aussi le numérateur et le dénominateur. Ce taux de complétude est distinct du taux de conservation et de la part des montants connus conservés. Décline ensuite par fournisseur. Montre le SQL, les unités et les sources. Pourquoi un normalisé non NULL ne suffit-il pas ? N’invente pas de cause ni d’autorisation de livraison. Définition exacte de preserved_supplier_eur : SUM(CASE WHEN review_status = 'PRESERVED' THEN supplier_cents END) / 100.0. Si aucun contrat conservé ne possède de montant connu dans le groupe, la somme reste NULL, jamais 0 : aucun ELSE 0 ni COALESCE sur cette somme. Limite la sortie aux métriques définies ci-dessus ; ne crée pas de taux supplémentaire.",
+      "handoff": "Joindre le modèle métier, le contrat de métriques, SA1/SA2 et les preuves Genie. Builder doit réutiliser review_status et la définition fournisseur, afficher la définition des indicateurs et une trace contrat → source → mapping. Les constantes des résultats du mini-lab ne doivent pas entrer dans le prompt.",
+      "debrief": "Montrer une ambiguïté éliminée, un contre-exemple (C002 ou C005), la même définition dans deux surfaces et un propriétaire pour la règle. Le gain est une décision plus cohérente et explicable, pas une hausse annoncée du taux de réussite du modèle. Faites nommer le numérateur et le dénominateur de « couverture » : la complétude fournisseur et la part conservée des montants connus répondent à deux questions différentes."
+    },
+    "funds": {
+      "title": "Fonds · distinguer l’absence de l’incident",
+      "challenge": "Avant de révéler les résultats, prédisez : toutes les VL absentes sont-elles en retard ? Une ligne après jointure sur les calculs représente-t-elle toujours un fonds ?",
+      "exercise": [
+        "2 min · Prédisez les résultats de SB0 : absences et lignes jointes. Précisez ce que signifie « fonds en incident ». Ne consultez pas SB1.",
+        "3 min · Explorez F003, F005 puis F001 : échéance, observation, version et calculs. Identifiez les clés et la relation un-à-plusieurs.",
+        "3 min · Comparez SB0/SB1/SB2 : quels faux incidents disparaissent, et combien de fonds distincts correspondent aux calculs candidats ?",
+        "4 min · Posez à Genie la question avec heure, calendrier et grain explicites ; inspectez son SQL sans lui donner les résultats chiffrés.",
+        "8 min · Complétez l’enquête et vérifiez le contrat pour Builder. Échangez les rôles métier/IT."
+      ],
+      "entities": [
+        {
+          "id": "fund",
+          "label": "Fonds",
+          "meaning": "L’entité métier ; son identifiant ne suffit pas pour joindre des observations couvrant plusieurs dates.",
+          "grain": "fund_id ; une seule nav_date par fonds dans ce jeu.",
+          "source": "{{ns}}fund_expectations.fund_id"
+        },
+        {
+          "id": "expectation",
+          "label": "Échéance attendue",
+          "meaning": "L’obligation de recevoir une VL à une date et une heure, selon le calendrier. Une non-attente reste visible.",
+          "grain": "fund_id + nav_date ; expected, deadline_utc.",
+          "source": "{{ns}}fund_expectations"
+        },
+        {
+          "id": "observation",
+          "label": "VL reçue",
+          "meaning": "Une valeur, son heure de réception et sa version fournisseur. L’absence est une relation vide, pas une valeur à zéro.",
+          "grain": "Zéro ou une observation pour fund_id + nav_date dans ce snapshot.",
+          "source": "{{ns}}fund_observations → {{ns}}fund_freshness"
+        },
+        {
+          "id": "calculation",
+          "label": "Calcul consommateur",
+          "meaning": "Un résultat antérieur, son unité et la version qu’il a consommée. Plusieurs calculs peuvent dépendre du même fonds.",
+          "grain": "calculation_id ; fund_id est non unique.",
+          "source": "{{ns}}calculation_state → {{ns}}calculation_review"
+        }
+      ],
+      "relations": [
+        {
+          "from": "fund",
+          "to": "expectation",
+          "label": "Un fonds suit un calendrier de VL",
+          "cardinality": "1 → 1 échéance dans ce snapshot",
+          "rule": "Le calendrier définit le dénominateur des VL attendues."
+        },
+        {
+          "from": "expectation",
+          "to": "observation",
+          "label": "L’échéance peut être satisfaite par une observation",
+          "cardinality": "1 → 0..1",
+          "rule": "LEFT JOIN sur fund_id ET nav_date ; garder les lignes absentes et l’heure de référence."
+        },
+        {
+          "from": "observation",
+          "to": "calculation",
+          "label": "Une version fournisseur alimente plusieurs calculs",
+          "cardinality": "1 → plusieurs ; source parfois absente",
+          "rule": "Comparer consumed_source_version à source_version ; compter les calculation_id séparément des fund_id. La jointure actuelle par fund_id est limitée au snapshot à date unique."
+        }
+      ],
+      "measures": [
+        {
+          "id": "missing",
+          "label": "VL attendues en retard et non reçues",
+          "definition": "Nombre de lignes de fund_freshness dont arrival_status = MISSING, au 20/10/2026 à 10:00 UTC.",
+          "unit": "fonds/date",
+          "grain": "fund_id + nav_date",
+          "limit": "WAITING, NOT_EXPECTED et LATE_RECEIVED ne sont pas des absences encore en retard."
+        },
+        {
+          "id": "rate",
+          "label": "Taux d’absences en retard",
+          "definition": "100 × MISSING / nombre de lignes expected = 1. Le calendrier donne le dénominateur ; ne pas compter les lignes de calcul.",
+          "unit": "% des VL attendues",
+          "grain": "population et heure filtrées",
+          "limit": "Dénominateur nul = NULL ; pas de rafraîchissement live implicite."
+        },
+        {
+          "id": "impact",
+          "label": "Calculs candidats et fonds concernés",
+          "definition": "COUNT DISTINCT calculation_id, puis COUNT DISTINCT fund_id, limités à RECOMPUTE_CANDIDATE. Deux mesures de grains différents.",
+          "unit": "calculs / fonds distincts",
+          "grain": "calculation_id pour les calculs, fund_id pour les fonds",
+          "limit": "Ce sont des candidats à examiner ; aucune exécution ni fermeture transitive du graphe."
+        }
+      ],
+      "sql_ids": [
+        "SB0",
+        "SB1",
+        "SB2"
+      ],
+      "genie_prompt": "À 10:00 UTC le 20 octobre 2026, utilise fund_freshness pour compter les VL MISSING parmi celles expected = 1, avec dénominateur et taux. Explique pourquoi WAITING, NOT_EXPECTED et LATE_RECEIVED ne désignent pas la même situation. Avec calculation_review, donne séparément le nombre de calculation_id distincts RECOMPUTE_CANDIDATE et de fund_id distincts concernés. Montre les SQL, clés, grains et versions. Ne compte pas les lignes d’une jointure un-à-plusieurs comme des fonds.",
+      "handoff": "Joindre le modèle fonds → échéance → observation → calcul, SB1/SB2 et le SQL Genie. Builder doit lire les statuts des vues communes, séparer les compteurs fonds/calculs et montrer la preuve de version. Réutiliser les définitions ; ne pas créer une nouvelle règle « NULL = incident ».",
+      "debrief": "Montrer un faux incident évité, un chemin d’impact expliqué et deux compteurs de grains différents. Tester aussi la limite : changer le calendrier change la définition attendue ; le modèle ne décide pas du calendrier à la place du métier."
+    }
+  }
+}

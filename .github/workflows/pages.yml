@@ -1,0 +1,35 @@
+name: Publier le studio
+on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  validate:
+    uses: ./.github/workflows/validate.yml
+  deploy:
+    needs: validate
+    if: github.ref_name == github.event.repository.default_branch
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: github-pages
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: harvest-atelier
+          path: downloads
+      - name: Préparer les fichiers participant vérifiés
+        run: python scripts/stage_pages.py downloads/harvest-participant.zip site
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - uses: actions/deploy-pages@v4
+        id: deployment

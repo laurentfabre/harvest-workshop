@@ -1,0 +1,7 @@
+fund_id,nav_date,expected,deadline_utc,calendar_note
+F001,2026-10-20,1,2026-10-20 08:00:00,Jour de valorisation
+F002,2026-10-20,1,2026-10-20 08:00:00,Jour de valorisation
+F003,2026-10-20,1,2026-10-20 08:00:00,Jour de valorisation
+F004,2026-10-20,0,2026-10-20 08:00:00,Pas de VL attendue selon le calendrier de ce fonds
+F005,2026-10-20,1,2026-10-20 12:00:00,Échéance à midi UTC
+F006,2026-10-20,1,2026-10-20 08:00:00,Jour de valorisation
